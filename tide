@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# File configuration
+CFG_FILE="${CFG_FILE:-$HOME/.config/tiderc}"
+
+# Check for configuration file and source it
+if [[ -e "$CFG_FILE" ]]; then
+  source "$CFG_FILE"
+fi
+
+# Display help
+usage() {
+  cat << EOF
+  DESCRIPTION:
+
+    tide: tool for managing pods
+
+  COMMANDS:
+
+    ls:                                                   list pods
+    rm <release>:                                         delete a release
+    install <release_name> <service_name> <yaml_env>:     install a release
+    upgrade <release_name> <service_name> <yaml_env>:     update yaml files for a release
+    exec <pod> <command>:                                 execute <command> on specified <pod>
+    clean:                                                delete all persistent volume claims
+    tail <pod>:                                           view logs of running pod
+    show <pod>:                                           view pod metadata
+EOF
+}
+
+confirm() {
+  # echo "Are you sure you want to run \"$@\"? [y/N] "
+  if [ "$confirm" = "true" ]; then
+    command_to_confirm="$@"
+    read -r -p "Are you sure you want to run \"$command_to_confirm\"? [y/N] " response
+    case "$response" in
+        [yY][eE][sS]|[yY])
+            $@ && exit 0
+            ;;
+        *)
+            exit 0
+            ;;
+    esac
+  else
+    $@
+  fi
+}
+
+sub_ls() {
+  confirm "kubectl get pods"
+  exit 0
+}
+
+sub_rm() {
+  confirm "helm delete $1"
+  exit 0
+}
+
+sub_exec() {
+  confirm "kubectl exec -it $@"
+  exit 0
+}
+
+sub_tail() {
+  confirm "kubectl logs -f $1"
+  exit 0
+}
+
+sub_clean() {
+  confirm "kubectl delete pvc --all"
+  exit 0
+}
+
+sub_show() {
+  confirm "kubectl describe pod $1"
+  exit 0
+}
+
+sub_install() {
+  confirm "helm ssm install $1 callrail/$2 -f $3-values.yaml"
+  exit 0
+}
+
+sub_upgrade() {
+  confirm "helm ssm upgrade $1 callrail/$2 -f $3-values.yaml"
+  exit 0
+}
+
+error() {
+  confirm -e "\033[0;31m$1\033[0m" >&2
+  echo
+  usage
+}
+
+# Set flag options
+while getopts "ch" opt; do
+  case "$opt" in
+    h) usage && exit 0;;
+    c) confirm=true;;
+    *) error "Invalid flag.";;
+  esac
+done 2>/dev/null
+shift "$((OPTIND-1))"
+
+command=$1
+case $command in
+  *)
+    for arg in "$@"; do
+      shift
+      sub_${command} $@ # > /dev/null 2>&1
+      if [ $? = 127 ]; then
+        error "Error: '$command' is not a known command."
+        exit 1
+      fi
+      shift
+    done
+  ;;
+esac
+
+usage && exit 0
