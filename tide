@@ -81,12 +81,12 @@ sub_show() {
 }
 
 sub_install() {
-  confirm "helm ssm install $1 callrail/$2 -f $3-values.yaml"
+  confirm "helm ssm install $1 callrail/$2 -f $3-values.yaml --timeout 20m"
   exit 0
 }
 
 sub_upgrade() {
-  confirm "helm ssm upgrade $1 callrail/$2 -f $3-values.yaml"
+  confirm "helm ssm upgrade $1 callrail/$2 -f $3-values.yaml --timeout 12m"
   exit 0
 }
 
