@@ -61,7 +61,14 @@ sub_rm() {
 }
 
 sub_exec() {
-  confirm "kubectl exec -it $@"
+  if [[ $# -eq 0 ]]; then
+    if [ -z "$COMMANDS" ]; then error 'No commands set in ~/.config/tiderc'; fi
+    app=$(tide ls | tail -n +2 | awk '{print $1}' | fzf)
+    exe=$(printf "%s\n" "${COMMANDS[@]}" | fzf)
+    tide exec $app -- $exe
+  else
+    confirm "kubectl exec -it $@"
+  fi
   exit 0
 }
 
@@ -94,6 +101,7 @@ error() {
   echo -e "\033[0;31m$1\033[0m" >&2
   echo
   usage
+  exit 1
 }
 
 # Set flag options
