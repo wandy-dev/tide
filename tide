@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # File configuration
-CFG_FILE="${CFG_FILE:-$HOME/.config/tiderc}"
+CFG_FILE="${CFG_FILE:-$HOME/.config/tide/tiderc}"
 
 # Check for configuration file and source it
 if [[ -e "$CFG_FILE" ]]; then
@@ -21,7 +21,7 @@ usage() {
     rm <release>:                                         delete a release
     install <release_name> <service_name> <yaml_env>:     install a release
     upgrade <release_name> <service_name> <yaml_env>:     update yaml files for a release
-    exec <pod> <command>:                                 execute <command> on specified <pod>
+    exec [<pod>] [<command>]:                             execute <command> on specified <pod> omit args to use fzf to select
     clean:                                                delete all persistent volume claims
     tail <pod>:                                           view logs of running pod
     show <pod>:                                           view pod metadata
@@ -62,7 +62,7 @@ sub_rm() {
 
 sub_exec() {
   if [[ $# -eq 0 ]]; then
-    if [ -z "$COMMANDS" ]; then error 'No commands set in ~/.config/tiderc'; fi
+    if [ -z "$COMMANDS" ]; then error 'No commands set in ~/.config/tide/tiderc'; fi
     app=$(tide ls | tail -n +2 | awk '{print $1}' | fzf)
     exe=$(printf "%s\n" "${COMMANDS[@]}" | fzf)
     tide exec $app -- $exe
